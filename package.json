@@ -1,0 +1,15 @@
+{
+  "name": "medialert-ai",
+  "version": "1.0.0",
+  "private": true,
+  "description": "MERN medicine expiry tracking and AI health assistant platform.",
+  "scripts": {
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "start:backend": "npm --prefix backend start",
+    "build:frontend": "npm --prefix frontend run build"
+  },
+  "engines": {
+    "node": ">=18.18.0"
+  }
+}
