@@ -16,6 +16,63 @@ const keywordMap = [
   { category: "Antibiotic", terms: ["antibiotic", "infection", "bacterial"] }
 ];
 
+const medicineNameHints = [
+  {
+    category: "Fever",
+    terms: ["paracetamol", "acetaminophen", "dolo", "crocin", "calpol", "tylenol"],
+    symptoms: ["fever", "headache"],
+    usage: "Helps reduce fever and lower body temperature."
+  },
+  {
+    category: "Cold",
+    terms: ["sinarest", "coldact", "sudafed", "nasivion", "vicks action 500", "decolgen", "respifed"],
+    symptoms: ["cold", "congestion", "sneezing", "runny nose"],
+    usage: "Helps relieve cold symptoms such as congestion and sneezing."
+  },
+  {
+    category: "Cough",
+    terms: ["ascoril", "grilinctus", "benadryl", "dextromethorphan", "tussi", "cough syrup"],
+    symptoms: ["cough", "throat irritation"],
+    usage: "Helps soothe cough and throat irritation."
+  },
+  {
+    category: "Pain Relief",
+    terms: ["combiflam", "ibuprofen", "diclofenac", "nimesulide", "meftal", "aceclofenac"],
+    symptoms: ["pain", "ache", "inflammation"],
+    usage: "Helps relieve mild to moderate pain."
+  },
+  {
+    category: "Vitamin",
+    terms: ["becosules", "zincovit", "neurobion", "revital", "multivitamin"],
+    symptoms: ["vitamin", "supplement", "deficiency"],
+    usage: "Used as a vitamin supplement to support nutritional needs."
+  },
+  {
+    category: "Antibiotic",
+    terms: ["azithromycin", "amoxicillin", "augmentin", "cefixime", "ciprofloxacin", "levofloxacin"],
+    symptoms: ["infection", "bacterial"],
+    usage: "Used as prescribed to treat bacterial infections."
+  },
+  {
+    category: "Blood Pressure",
+    terms: ["amlodipine", "telmisartan", "losartan", "atenolol", "metoprolol", "olmesartan"],
+    symptoms: ["blood pressure", "hypertension"],
+    usage: "Used as prescribed to help manage blood pressure."
+  },
+  {
+    category: "Diabetes",
+    terms: ["metformin", "glimepiride", "gliclazide", "insulin", "dapagliflozin", "sitagliptin"],
+    symptoms: ["blood sugar", "diabetes"],
+    usage: "Used as prescribed to help manage blood sugar."
+  },
+  {
+    category: "Skin Care",
+    terms: ["clotrimazole", "mupirocin", "calamine", "benzoyl peroxide", "hydrocortisone", "terbinafine"],
+    symptoms: ["skin", "rash", "itch", "acne"],
+    usage: "Used for skin irritation, rash, or acne as directed."
+  }
+];
+
 const getOpenAIClient = () => {
   if (!process.env.OPENAI_API_KEY) {
     return null;
@@ -58,18 +115,66 @@ const extractSymptoms = (text) => {
   return [...symptoms].slice(0, 8);
 };
 
-const findKeywordMatch = (text) => {
+const findMedicineHint = (text) => {
   const haystack = text.toLowerCase();
-  const match = keywordMap.find(({ terms }) => terms.some((term) => haystack.includes(term)));
-  const category = match?.category || "Other";
-  const symptoms = extractSymptoms(haystack);
-
-  return { category, symptoms };
+  return medicineNameHints.find(({ terms }) => terms.some((term) => haystack.includes(term))) || null;
 };
 
-const buildUsageText = (name, category, symptoms) => {
-  const symptomText = symptoms.length ? symptoms.slice(0, 3).join(", ") : category.toLowerCase();
-  return `${name} is commonly stocked to help manage ${symptomText}.`;
+const findKeywordMatch = (text) => {
+  const haystack = text.toLowerCase();
+  const hint = findMedicineHint(haystack);
+  const match = keywordMap.find(({ terms }) => terms.some((term) => haystack.includes(term)));
+  const category = hint?.category || match?.category || "Other";
+  const symptoms = Array.from(
+    new Set([...(hint?.symptoms || []), ...extractSymptoms(haystack)])
+  ).slice(0, 8);
+
+  return { category, symptoms, usage: hint?.usage || "" };
+};
+
+const isGenericUsage = (usage) => {
+  const normalized = String(usage || "").trim().toLowerCase();
+
+  if (!normalized) {
+    return true;
+  }
+
+  const genericPatterns = [
+    /^use as directed\b/,
+    /^used as directed\b/,
+    /^consult (a )?(doctor|pharmacist|healthcare professional)\b/,
+    /^consult your (doctor|pharmacist|healthcare professional)\b/,
+    /^follow label instructions\b/,
+    /^follow the label\b/,
+    /^other\b/,
+    /^helps relieve other\b/,
+    /^helps manage other\b/,
+    /^general symptom relief\b/,
+    /^symptom relief\b/,
+    /^for symptom relief\b/,
+    /^for use only\b/,
+    /^not enough information\b/
+  ];
+
+  return genericPatterns.some((pattern) => pattern.test(normalized));
+};
+
+const buildUsageText = (_name, category) => {
+  const categoryUsage = {
+    Headache: "Helps relieve headaches and migraine discomfort.",
+    Fever: "Helps reduce fever and lower body temperature.",
+    Cold: "Helps relieve cold symptoms such as congestion and sneezing.",
+    Cough: "Helps soothe cough and throat irritation.",
+    Diabetes: "Used as prescribed to help manage blood sugar.",
+    "Blood Pressure": "Used as prescribed to help manage blood pressure.",
+    Vitamin: "Used as a vitamin supplement to support nutritional needs.",
+    "Pain Relief": "Helps relieve mild to moderate pain.",
+    "Skin Care": "Used for skin irritation, rash, or acne as directed.",
+    Antibiotic: "Used as prescribed to treat bacterial infections.",
+    Other: "Use as directed by a qualified healthcare professional."
+  };
+
+  return categoryUsage[category] || categoryUsage.Other;
 };
 
 const buildDescriptionText = (name, manufacturer, category, symptoms) => {
@@ -104,14 +209,14 @@ const buildFallbackImageDataUrl = ({ name, category }) => {
 
 const fallbackProfile = ({ name, manufacturer, descriptionHint }) => {
   const text = `${name} ${manufacturer || ""} ${descriptionHint || ""}`.toLowerCase();
-  const { category, symptoms } = findKeywordMatch(text);
-  const usage = buildUsageText(name, category, symptoms);
+  const { category, symptoms, usage: usageHint } = findKeywordMatch(text);
+  const usage = !isGenericUsage(usageHint) ? usageHint : buildUsageText(name, category, symptoms);
   const description = descriptionHint?.trim() || buildDescriptionText(name, manufacturer, category, symptoms);
   const warnings = "Follow label instructions and consult a doctor or pharmacist when symptoms persist.";
 
   return {
     category,
-    symptoms: symptoms.length ? symptoms : [category.toLowerCase()],
+    symptoms,
     description,
     usage,
     warnings,
@@ -144,7 +249,7 @@ export const buildMedicineProfile = async ({ name, manufacturer, descriptionHint
         {
           role: "system",
           content:
-            "You classify medicines for inventory metadata and also generate a concise inventory description. Return only valid JSON with category, symptoms, description, usage, warnings, and imagePrompt. Use category only from: Headache, Fever, Cold, Cough, Diabetes, Blood Pressure, Vitamin, Pain Relief, Skin Care, Antibiotic, Other. The description must be 1 to 2 short sentences, neutral, and suitable for a pharmacy inventory card. The imagePrompt must describe a clean product-style medicine image on a light background, with no people, no watermark, and no visible labels."
+            "You classify medicines for inventory metadata and also generate a concise inventory description. Return only valid JSON with category, symptoms, description, usage, warnings, and imagePrompt. Use category only from: Headache, Fever, Cold, Cough, Diabetes, Blood Pressure, Vitamin, Pain Relief, Skin Care, Antibiotic, Other. The description must be 1 to 2 short sentences, neutral, and suitable for a pharmacy inventory card. The usage must be a specific, conservative one-sentence common-use summary. If the medicine is a branded or combination OTC product, infer the most likely common use from the medicine name and manufacturer. Avoid vague output such as 'other', 'general symptom relief', or 'use as directed' unless there is truly no safe inference. The imagePrompt must describe a clean product-style medicine image on a light background, with no people, no watermark, and no visible labels."
         },
         {
           role: "user",
@@ -160,20 +265,22 @@ export const buildMedicineProfile = async ({ name, manufacturer, descriptionHint
       return fallbackProfile({ name, manufacturer, descriptionHint });
     }
 
-    const category = normalizeCategory(parsed.category);
     const fallback = fallbackProfile({ name, manufacturer, descriptionHint });
+    const category = normalizeCategory(parsed.category);
+    const resolvedCategory = category === "Other" && fallback.category !== "Other" ? fallback.category : category;
     const parsedSymptoms = Array.isArray(parsed.symptoms)
       ? parsed.symptoms.map((item) => String(item).toLowerCase()).filter(Boolean)
       : [];
     const symptoms = parsedSymptoms.length ? parsedSymptoms : fallback.symptoms;
+    const usage = !isGenericUsage(parsed.usage) ? String(parsed.usage).trim() : fallback.usage;
 
     return {
-      category,
+      category: resolvedCategory,
       symptoms,
-      description: String(parsed.description || descriptionHint || buildDescriptionText(name, manufacturer, category, symptoms)).trim() || buildDescriptionText(name, manufacturer, category, symptoms),
-      usage: String(parsed.usage || buildUsageText(name, category, symptoms)).trim() || buildUsageText(name, category, symptoms),
+      description: String(parsed.description || descriptionHint || buildDescriptionText(name, manufacturer, resolvedCategory, symptoms)).trim() || buildDescriptionText(name, manufacturer, resolvedCategory, symptoms),
+      usage: usage || buildUsageText(name, resolvedCategory, symptoms),
       warnings: String(parsed.warnings || fallback.warnings).trim() || fallback.warnings,
-      imagePrompt: String(parsed.imagePrompt || buildImagePrompt(name, category, manufacturer)).trim() || buildImagePrompt(name, category, manufacturer),
+      imagePrompt: String(parsed.imagePrompt || buildImagePrompt(name, resolvedCategory, manufacturer)).trim() || buildImagePrompt(name, resolvedCategory, manufacturer),
       raw: parsed
     };
   } catch (error) {
