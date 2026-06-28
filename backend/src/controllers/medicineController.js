@@ -1,4 +1,5 @@
 import Medicine from "../models/Medicine.js";
+import { seedDemoMedicines } from "../config/seed.js";
 import { getExpiryStatus } from "../services/expiryService.js";
 import { buildMedicineProfile, generateMedicineImage } from "../services/openaiService.js";
 import asyncHandler from "../utils/asyncHandler.js";
@@ -26,13 +27,24 @@ export const getMedicines = asyncHandler(async (req, res) => {
   const limit = Math.min(Math.max(Number(req.query.limit) || 100, 1), 200);
   const filter = buildMedicineQuery(req.query);
 
-  const [medicines, total] = await Promise.all([
+  let [medicines, total] = await Promise.all([
     Medicine.find(filter)
       .sort(req.query.q ? { score: { $meta: "textScore" } } : { createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit),
     Medicine.countDocuments(filter)
   ]);
+
+  if (!total) {
+    await seedDemoMedicines();
+    [medicines, total] = await Promise.all([
+      Medicine.find(filter)
+        .sort(req.query.q ? { score: { $meta: "textScore" } } : { createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit),
+      Medicine.countDocuments(filter)
+    ]);
+  }
 
   res.json({
     medicines,

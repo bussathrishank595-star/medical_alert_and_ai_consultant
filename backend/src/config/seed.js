@@ -115,7 +115,7 @@ const seedDemoUsers = async () => {
   }
 };
 
-const seedDemoMedicines = async () => {
+export const seedDemoMedicines = async () => {
   const totalMedicines = await Medicine.countDocuments();
 
   if (totalMedicines > 0) {
