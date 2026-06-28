@@ -1,4 +1,4 @@
-import { Bot, CalendarClock, PackageCheck, Search } from "lucide-react";
+import { Bot, CalendarClock, PackageCheck, Search, ShoppingCart } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { Link } from "react-router-dom";
@@ -53,10 +53,16 @@ const UserDashboard = () => {
             <h2 className="text-2xl font-bold text-slate-950 dark:text-white">Find Medicines</h2>
             <p className="muted">Search by symptom, category, or medicine name.</p>
           </div>
-          <Link className="btn btn-primary" to="/assistant">
-            <Bot className="h-4 w-4" />
-            Ask AI
-          </Link>
+          <div className="flex flex-wrap gap-3">
+            <Link className="btn btn-primary" to="/assistant">
+              <Bot className="h-4 w-4" />
+              Ask AI
+            </Link>
+            <Link className="btn btn-secondary" to="/cart">
+              <ShoppingCart className="h-4 w-4" />
+              View Cart
+            </Link>
+          </div>
         </div>
         <label className="relative mt-5 block">
           <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-slate-400" />

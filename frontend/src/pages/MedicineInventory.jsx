@@ -1,9 +1,10 @@
-import { Edit, Eye, Plus, Search, Trash2 } from "lucide-react";
+import { Edit, Eye, Plus, Search, ShoppingCart, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { Link } from "react-router-dom";
 import api from "../api/client.js";
 import StatusBadge from "../components/StatusBadge.jsx";
+import { useCart } from "../context/CartContext.jsx";
 
 const categories = [
   "",
@@ -24,6 +25,7 @@ const MedicineInventory = ({ customerView = false }) => {
   const [medicines, setMedicines] = useState([]);
   const [filters, setFilters] = useState({ q: "", category: "", status: "" });
   const [loading, setLoading] = useState(true);
+  const { addToCart } = useCart();
 
   const loadMedicines = async () => {
     setLoading(true);
@@ -167,6 +169,19 @@ const MedicineInventory = ({ customerView = false }) => {
                       <Link className="btn btn-secondary p-2" to={`/medicines/${medicine._id}`} title="View details">
                         <Eye className="h-4 w-4" />
                       </Link>
+                      {customerView ? (
+                        <button
+                          className="btn btn-primary p-2"
+                          onClick={() => {
+                            addToCart(medicine);
+                            toast.success(`${medicine.name} added to cart`);
+                          }}
+                          disabled={!medicine.stock || new Date(medicine.expiryDate) <= new Date()}
+                          title="Add to cart"
+                        >
+                          <ShoppingCart className="h-4 w-4" />
+                        </button>
+                      ) : null}
                       {!customerView ? (
                         <>
                           <Link

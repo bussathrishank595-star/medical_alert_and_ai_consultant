@@ -62,7 +62,7 @@ const AiAssistant = () => {
             </div>
             <div>
               <h2 className="text-xl font-bold text-slate-950 dark:text-white">AI Health Assistant</h2>
-              <p className="muted">Recommendations are limited to available, non-expired inventory.</p>
+              <p className="muted">Say hi for help, or ask a health-related question. Recommendations are limited to available, non-expired inventory.</p>
             </div>
           </div>
         </div>
@@ -71,9 +71,9 @@ const AiAssistant = () => {
           {!history.length ? (
             <div className="mx-auto mt-16 max-w-md text-center">
               <Sparkles className="mx-auto h-10 w-10 text-medical-600" />
-              <h3 className="mt-4 text-lg font-semibold text-slate-950 dark:text-white">Describe symptoms briefly</h3>
+              <h3 className="mt-4 text-lg font-semibold text-slate-950 dark:text-white">Ask a health question</h3>
               <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-                Example: I have headache and fever. The assistant will avoid diagnosis and suggest matching stocked medicines only.
+                Example: I have headache and fever. If you just say hi, I’ll greet you and ask for a health-related question.
               </p>
             </div>
           ) : null}
@@ -88,16 +88,33 @@ const AiAssistant = () => {
                 {item.recommendations?.length ? (
                   <div className="mt-4 grid gap-3 md:grid-cols-2">
                     {item.recommendations.map((recommendation) => (
-                      <Link
-                        key={recommendation.medicineId?._id || recommendation.medicineId || recommendation.name}
-                        to={`/medicines/${recommendation.medicineId?._id || recommendation.medicineId}`}
-                        className="rounded-md border border-slate-200 bg-white p-3 transition hover:border-primary-300 dark:border-slate-800 dark:bg-slate-900"
-                      >
-                        <p className="font-semibold text-slate-950 dark:text-white">{recommendation.name}</p>
-                        <p className="mt-1 line-clamp-2 text-xs text-slate-500 dark:text-slate-400">
-                          {recommendation.usage}
-                        </p>
-                      </Link>
+                      recommendation.medicineId ? (
+                        <Link
+                          key={recommendation.medicineId?._id || recommendation.medicineId || recommendation.name}
+                          to={`/medicines/${recommendation.medicineId?._id || recommendation.medicineId}`}
+                          className="rounded-md border border-slate-200 bg-white p-3 transition hover:border-primary-300 dark:border-slate-800 dark:bg-slate-900"
+                        >
+                          <p className="font-semibold text-slate-950 dark:text-white">{recommendation.name}</p>
+                          <p className="mt-1 line-clamp-2 text-xs text-slate-500 dark:text-slate-400">
+                            {recommendation.usage}
+                          </p>
+                        </Link>
+                      ) : (
+                        <div
+                          key={recommendation.name}
+                          className="rounded-md border border-dashed border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900"
+                        >
+                          <div className="flex items-center justify-between gap-3">
+                            <p className="font-semibold text-slate-950 dark:text-white">{recommendation.name}</p>
+                            <span className="rounded-full bg-amber-50 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-amber-700 dark:bg-amber-500/15 dark:text-amber-100">
+                              Reference
+                            </span>
+                          </div>
+                          <p className="mt-1 line-clamp-2 text-xs text-slate-500 dark:text-slate-400">
+                            {recommendation.usage}
+                          </p>
+                        </div>
+                      )
                     ))}
                   </div>
                 ) : null}

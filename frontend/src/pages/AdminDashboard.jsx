@@ -2,8 +2,10 @@ import {
   AlertTriangle,
   Boxes,
   CalendarClock,
+  Clock3,
   PackageCheck,
   Pill,
+  ShoppingBag,
   Users
 } from "lucide-react";
 import { ArcElement, BarElement, CategoryScale, Chart as ChartJS, Legend, LinearScale, Tooltip } from "chart.js";
@@ -84,6 +86,11 @@ const AdminDashboard = () => {
         <MetricCard title="Total Stock" value={cards.totalStock} icon={Boxes} tone="blue" />
       </section>
 
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-2">
+        <MetricCard title="Total Orders" value={cards.totalOrders} icon={ShoppingBag} tone="blue" />
+        <MetricCard title="Pending Orders" value={cards.pendingOrders} icon={Clock3} tone="amber" />
+      </section>
+
       <section className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
         <div className="panel p-5">
           <h3 className="font-semibold text-slate-950 dark:text-white">Category Distribution</h3>
@@ -129,6 +136,147 @@ const AdminDashboard = () => {
                 <tr>
                   <td className="px-5 py-8 text-center text-slate-500 dark:text-slate-400" colSpan="4">
                     No expiry alerts right now.
+                  </td>
+                </tr>
+              ) : null}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section className="panel overflow-hidden">
+        <div className="border-b border-slate-200 p-5 dark:border-slate-800">
+          <h3 className="font-semibold text-slate-950 dark:text-white">Medicine Requests</h3>
+          <p className="muted">Customer requests that need restock follow-up.</p>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-slate-200 text-sm dark:divide-slate-800">
+            <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500 dark:bg-slate-900/80">
+              <tr>
+                <th className="px-5 py-3">Customer Request</th>
+                <th className="px-5 py-3">Status</th>
+                <th className="px-5 py-3">Advice</th>
+                <th className="px-5 py-3">Date</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+              {(stats?.medicineRequests || []).map((request) => (
+                <tr key={request._id}>
+                  <td className="px-5 py-4">
+                    <p className="font-medium text-slate-950 dark:text-white">{request.message}</p>
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{request.adminReminder || "Stock review needed"}</p>
+                    {request.recommendations?.length ? (
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {request.recommendations.map((recommendation) => (
+                          <span key={recommendation.medicineId?._id || recommendation.name} className="rounded-full bg-primary-50 px-2.5 py-1 text-xs font-medium text-primary-700 dark:bg-primary-500/15 dark:text-primary-100">
+                            {recommendation.name}
+                          </span>
+                        ))}
+                      </div>
+                    ) : null}
+                  </td>
+                  <td className="px-5 py-4">
+                    <span className={`rounded-full px-3 py-1 text-xs font-medium ${
+                      request.matchType === "Exact"
+                        ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-100"
+                        : request.matchType === "Alternative"
+                          ? "bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-100"
+                          : request.matchType === "Reference"
+                            ? "bg-indigo-50 text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-100"
+                          : "bg-red-50 text-red-700 dark:bg-red-500/15 dark:text-red-100"
+                    }`}>
+                      {request.matchType}
+                    </span>
+                  </td>
+                  <td className="px-5 py-4 text-slate-600 dark:text-slate-300">
+                    {request.response}
+                  </td>
+                  <td className="px-5 py-4 text-slate-600 dark:text-slate-300">
+                    {new Date(request.createdAt).toLocaleString()}
+                  </td>
+                </tr>
+              ))}
+              {!stats?.medicineRequests?.length ? (
+                <tr>
+                  <td className="px-5 py-8 text-center text-slate-500 dark:text-slate-400" colSpan="4">
+                    No pending medicine requests right now.
+                  </td>
+                </tr>
+              ) : null}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section className="panel overflow-hidden">
+        <div className="border-b border-slate-200 p-5 dark:border-slate-800">
+          <h3 className="font-semibold text-slate-950 dark:text-white">Recent Orders</h3>
+          <p className="muted">Latest customer checkout requests received by the store.</p>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-slate-200 text-sm dark:divide-slate-800">
+            <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500 dark:bg-slate-900/80">
+              <tr>
+                <th className="px-5 py-3">Customer</th>
+                <th className="px-5 py-3">Items</th>
+                <th className="px-5 py-3">Payment</th>
+                <th className="px-5 py-3">Location</th>
+                <th className="px-5 py-3">Total</th>
+                <th className="px-5 py-3">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+              {(stats?.recentOrders || []).map((order) => (
+                <tr key={order._id}>
+                  <td className="px-5 py-4">
+                    <p className="font-medium text-slate-950 dark:text-white">{order.customerName}</p>
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{order.customerEmail}</p>
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{order.address}</p>
+                    {order.notes ? <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Note: {order.notes}</p> : null}
+                  </td>
+                  <td className="px-5 py-4 text-slate-600 dark:text-slate-300">
+                    <div className="space-y-1">
+                      {(order.items || []).slice(0, 3).map((item) => (
+                        <p key={`${order._id}-${item.name}`} className="text-xs">
+                          {item.name} × {item.quantity}
+                        </p>
+                      ))}
+                      {(order.items || []).length > 3 ? <p className="text-xs text-slate-400">+{(order.items || []).length - 3} more</p> : null}
+                    </div>
+                  </td>
+                  <td className="px-5 py-4 text-slate-600 dark:text-slate-300">
+                    <p>{order.paymentMode === "online" ? "Online" : "Cash"}</p>
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{order.paymentStatus}</p>
+                    {order.paymentMode === "online" ? (
+                      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">UPI: {order.upiId}</p>
+                    ) : null}
+                  </td>
+                  <td className="px-5 py-4 text-slate-600 dark:text-slate-300">
+                    {order.location?.latitude != null && order.location?.longitude != null ? (
+                      <a
+                        href={`https://www.google.com/maps?q=${order.location.latitude},${order.location.longitude}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-primary-700 hover:text-primary-800 dark:text-primary-300"
+                      >
+                        {order.location.latitude}, {order.location.longitude}
+                      </a>
+                    ) : (
+                      "Location not shared"
+                    )}
+                  </td>
+                  <td className="px-5 py-4 text-slate-600 dark:text-slate-300">Rs. {Number(order.total).toFixed(2)}</td>
+                  <td className="px-5 py-4">
+                    <span className="rounded-full bg-primary-50 px-3 py-1 text-xs font-medium text-primary-700 dark:bg-primary-500/15 dark:text-primary-100">
+                      {order.status}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+              {!stats?.recentOrders?.length ? (
+                <tr>
+                  <td className="px-5 py-8 text-center text-slate-500 dark:text-slate-400" colSpan="6">
+                    No orders received yet.
                   </td>
                 </tr>
               ) : null}

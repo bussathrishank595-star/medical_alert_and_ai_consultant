@@ -1,5 +1,4 @@
 import {
-  Bot,
   ClipboardList,
   FileText,
   LayoutDashboard,
@@ -7,6 +6,7 @@ import {
   Menu,
   Moon,
   PackagePlus,
+  ShoppingCart,
   Search,
   Sun,
   User,
@@ -14,7 +14,8 @@ import {
   X
 } from "lucide-react";
 import { useState } from "react";
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { useCart } from "../context/CartContext.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useTheme } from "../context/ThemeContext.jsx";
 
@@ -24,22 +25,23 @@ const adminLinks = [
   { to: "/admin/medicines/new", label: "Add Medicine", icon: PackagePlus },
   { to: "/admin/users", label: "Users", icon: Users },
   { to: "/admin/classifications", label: "AI Logs", icon: FileText },
-  { to: "/assistant", label: "Assistant", icon: Bot },
   { to: "/profile", label: "Profile", icon: User }
 ];
 
 const customerLinks = [
   { to: "/app", label: "Home", icon: LayoutDashboard },
   { to: "/medicines", label: "Search", icon: Search },
-  { to: "/assistant", label: "AI Chat", icon: Bot },
+  { to: "/cart", label: "Cart", icon: ShoppingCart },
   { to: "/profile", label: "Profile", icon: User }
 ];
 
 const AppShell = () => {
   const { user, logout, isAdmin } = useAuth();
+  const { count: cartCount = 0 } = useCart() || {};
   const { darkMode, setDarkMode } = useTheme();
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const links = isAdmin ? adminLinks : customerLinks;
 
   const handleLogout = () => {
@@ -97,12 +99,7 @@ const AppShell = () => {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button
-              className="btn btn-secondary p-2"
-              onClick={() => setDarkMode(!darkMode)}
-              aria-label="Toggle dark mode"
-              title="Toggle dark mode"
-            >
+            <button className="btn btn-secondary p-2" onClick={() => setDarkMode(!darkMode)} aria-label="Toggle dark mode" title="Toggle dark mode">
               {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </button>
             <button className="btn btn-secondary p-2 sm:px-4" onClick={handleLogout}>
@@ -115,6 +112,36 @@ const AppShell = () => {
           <Outlet />
         </main>
       </div>
+
+      {location.pathname !== "/assistant" ? (
+        <button
+          type="button"
+          onClick={() => navigate("/assistant")}
+          className="fixed bottom-5 right-5 z-50 flex items-center gap-3 rounded-full border border-slate-200 bg-white px-3 py-2 shadow-xl transition hover:-translate-y-0.5 hover:border-primary-300 dark:border-slate-700 dark:bg-slate-900"
+          aria-label="Open AI assistant"
+          title="Open AI assistant"
+        >
+          <span className="relative flex h-11 w-11 items-center justify-center">
+            <span className="absolute inset-0 rounded-full bg-primary-500/20 animate-ping" />
+            <img src="/robot-assistant.svg" alt="" className="relative h-11 w-11 rounded-full object-cover" />
+          </span>
+          <span className="hidden text-sm font-semibold text-slate-700 dark:text-slate-200 sm:inline">AI Assistant</span>
+        </button>
+      ) : null}
+
+      {!isAdmin && location.pathname !== "/cart" ? (
+        <button
+          type="button"
+          onClick={() => navigate("/cart")}
+          className="fixed right-5 top-20 z-50 flex items-center gap-2 rounded-full bg-primary-600 px-4 py-3 text-sm font-semibold text-white shadow-xl transition hover:bg-primary-700 lg:right-[11rem]"
+          aria-label="Open cart"
+          title="Open cart"
+        >
+          <ShoppingCart className="h-4 w-4" />
+          Cart
+          {cartCount > 0 ? <span className="rounded-full bg-white/20 px-2 py-0.5 text-xs">{cartCount}</span> : null}
+        </button>
+      ) : null}
     </div>
   );
 };

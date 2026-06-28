@@ -1,14 +1,16 @@
-import { ArrowLeft, CalendarClock, Factory, PackageCheck, Pill, Wallet } from "lucide-react";
+import { ArrowLeft, CalendarClock, Factory, PackageCheck, Pill, ShoppingCart, Wallet } from "lucide-react";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { Link, useParams } from "react-router-dom";
 import api from "../api/client.js";
 import StatusBadge from "../components/StatusBadge.jsx";
+import { useCart } from "../context/CartContext.jsx";
 
 const MedicineDetails = () => {
   const { id } = useParams();
   const [medicine, setMedicine] = useState(null);
   const [loading, setLoading] = useState(true);
+  const { addToCart } = useCart();
 
   useEffect(() => {
     api
@@ -72,6 +74,23 @@ const MedicineDetails = () => {
               <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">Category</p>
               <p className="font-semibold">{medicine.category}</p>
             </div>
+          </div>
+
+          <div className="flex flex-wrap gap-3">
+            <button
+              className="btn btn-primary"
+              onClick={() => {
+                addToCart(medicine);
+                toast.success(`${medicine.name} added to cart`);
+              }}
+              disabled={!medicine.stock || new Date(medicine.expiryDate) <= new Date()}
+            >
+              <ShoppingCart className="h-4 w-4" />
+              Add to cart
+            </button>
+            <Link className="btn btn-secondary" to="/cart">
+              Go to cart
+            </Link>
           </div>
 
           <div className="panel p-5">

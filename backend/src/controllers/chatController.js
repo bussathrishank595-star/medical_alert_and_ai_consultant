@@ -4,12 +4,23 @@ import { findMatchingMedicines, generateHealthResponse } from "../services/opena
 import asyncHandler from "../utils/asyncHandler.js";
 
 const buildRecommendations = (medicines) =>
-  medicines.map((medicine) => ({
-    medicineId: medicine._id,
-    name: medicine.name,
-    usage: medicine.aiClassification?.usage || medicine.description,
-    precautions: medicine.aiClassification?.warnings || "Follow label instructions and consult a doctor if unsure."
-  }));
+  medicines
+    .reduce((list, medicine) => {
+      const key = String(medicine?._id || medicine?.name || "").toLowerCase();
+      if (!key || list.seen.has(key)) {
+        return list;
+      }
+
+      list.seen.add(key);
+      list.items.push({
+        medicineId: medicine._id || null,
+        name: medicine.name,
+        usage: medicine.aiClassification?.usage || medicine.description,
+        precautions: medicine.aiClassification?.warnings || "Follow label instructions and consult a doctor if unsure.",
+        referenceOnly: Boolean(medicine.referenceOnly || !medicine._id)
+      });
+      return list;
+    }, { seen: new Set(), items: [] }).items;
 
 export const sendMessage = asyncHandler(async (req, res) => {
   const { message } = req.body;
@@ -19,17 +30,23 @@ export const sendMessage = asyncHandler(async (req, res) => {
   }).sort({ name: 1 });
 
   const matchedMedicines = findMatchingMedicines(message, activeMedicines);
-  const response = await generateHealthResponse({ message, matchedMedicines });
-  const recommendations = buildRecommendations(matchedMedicines);
+  const responsePayload = await generateHealthResponse({ message, matchedMedicines, inventory: activeMedicines });
+  const response = typeof responsePayload === "string" ? responsePayload : responsePayload.response;
+  const suggestedMedicines = typeof responsePayload === "string" ? matchedMedicines : responsePayload.suggestedMedicines || matchedMedicines;
+  const recommendations = buildRecommendations(suggestedMedicines);
+  const adminReminder = typeof responsePayload === "string" ? "" : responsePayload.adminReminder || "";
+  const matchType = typeof responsePayload === "string" ? (recommendations.length ? "Exact" : "Unavailable") : responsePayload.matchType || (recommendations.length ? "Exact" : "Unavailable");
 
   const history = await ChatHistory.create({
     userId: req.user._id,
     message,
     response,
+    adminReminder,
+    matchType,
     recommendations
   });
 
-  res.status(201).json({ response, recommendations, historyId: history._id });
+  res.status(201).json({ response, recommendations, historyId: history._id, adminReminder, matchType });
 });
 
 export const getHistory = asyncHandler(async (req, res) => {

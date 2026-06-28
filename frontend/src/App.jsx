@@ -4,6 +4,7 @@ import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import AddEditMedicine from "./pages/AddEditMedicine.jsx";
 import AdminDashboard from "./pages/AdminDashboard.jsx";
 import AiAssistant from "./pages/AiAssistant.jsx";
+import CartCheckout from "./pages/CartCheckout.jsx";
 import ClassificationLogs from "./pages/ClassificationLogs.jsx";
 import Login from "./pages/Login.jsx";
 import MedicineDetails from "./pages/MedicineDetails.jsx";
@@ -30,6 +31,7 @@ const App = () => (
     <Route element={<ProtectedRoute roles={["customer"]} />}>
       <Route element={<AppShell />}>
         <Route path="/app" element={<UserDashboard />} />
+        <Route path="/cart" element={<CartCheckout />} />
       </Route>
     </Route>
 

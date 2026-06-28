@@ -17,12 +17,22 @@ const chatHistorySchema = new mongoose.Schema(
       type: String,
       required: true
     },
+    adminReminder: {
+      type: String,
+      default: ""
+    },
+    matchType: {
+      type: String,
+      enum: ["General", "Medical", "Exact", "Alternative", "Reference", "Unavailable"],
+      default: "Exact"
+    },
     recommendations: [
       {
         medicineId: { type: mongoose.Schema.Types.ObjectId, ref: "Medicine" },
         name: String,
         usage: String,
-        precautions: String
+        precautions: String,
+        referenceOnly: { type: Boolean, default: false }
       }
     ]
   },
