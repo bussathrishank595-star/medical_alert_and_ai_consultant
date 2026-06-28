@@ -1,14 +1,14 @@
 import "dotenv/config";
 import app from "./app.js";
 import connectDB from "./config/db.js";
-import seedDemoUsers from "./config/seed.js";
+import seedData from "./config/seed.js";
 import { startExpiryJob } from "./jobs/expiryJob.js";
 
 const port = process.env.PORT || 5000;
 
 const startServer = async () => {
   await connectDB();
-  await seedDemoUsers();
+  await seedData();
   startExpiryJob();
 
   const server = app.listen(port, () => {
