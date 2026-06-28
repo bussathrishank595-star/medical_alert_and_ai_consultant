@@ -31,6 +31,12 @@ export const register = asyncHandler(async (req, res) => {
   }
 
   const role = adminEmails().includes(email.toLowerCase()) ? "admin" : "customer";
+  if (role !== "admin") {
+    const error = new Error("Access denied. Registration is restricted to administrators.");
+    error.statusCode = 403;
+    throw error;
+  }
+
   const user = await User.create({ name, email, password, role });
 
   sendAuthResponse(res, user, 201);
@@ -43,6 +49,12 @@ export const login = asyncHandler(async (req, res) => {
   if (!user || !(await user.comparePassword(password))) {
     const error = new Error("Invalid email or password");
     error.statusCode = 401;
+    throw error;
+  }
+
+  if (user.role !== "admin") {
+    const error = new Error("Access denied. Only administrators are allowed to log in.");
+    error.statusCode = 403;
     throw error;
   }
 

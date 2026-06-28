@@ -1,7 +1,7 @@
 import { Activity, Lock, Mail } from "lucide-react";
 import { useState } from "react";
 import toast from "react-hot-toast";
-import { Link, Navigate, useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 
 const Login = () => {
@@ -38,10 +38,10 @@ const Login = () => {
           </div>
           <h1 className="mt-8 text-3xl font-bold">MediAlert AI</h1>
           <p className="mt-4 max-w-md text-primary-50">
-            Track inventory, catch expiry risks early, and assist customers with AI-supported medicine recommendations.
+            Track inventory, catch expiry risks early, and manage operations with AI-supported medicine analytics.
           </p>
           <div className="mt-10 grid gap-3 text-sm text-primary-50">
-            <span className="rounded-md bg-white/10 px-3 py-2">JWT-secured admin and customer portals</span>
+            <span className="rounded-md bg-white/10 px-3 py-2">JWT-secured admin dashboard</span>
             <span className="rounded-md bg-white/10 px-3 py-2">OpenAI classification for medicine metadata</span>
             <span className="rounded-md bg-white/10 px-3 py-2">Expiry alerts and operational analytics</span>
           </div>
@@ -88,13 +88,6 @@ const Login = () => {
           <button className="btn btn-primary mt-7 w-full" type="submit" disabled={loading}>
             {loading ? "Signing in..." : "Login"}
           </button>
-
-          <p className="mt-6 text-center text-sm text-slate-500 dark:text-slate-400">
-            New customer?{" "}
-            <Link className="font-semibold text-primary-600 hover:text-primary-700" to="/register">
-              Create an account
-            </Link>
-          </p>
         </form>
       </section>
     </main>

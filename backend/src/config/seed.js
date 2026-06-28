@@ -38,6 +38,12 @@ const demoUsers = [
   }
 ];
 
+const parseAdminEmails = () =>
+  (process.env.ADMIN_EMAILS || "admin@example.com")
+    .split(",")
+    .map((email) => email.trim().toLowerCase())
+    .filter(Boolean);
+
 const demoMedicines = [
   {
     name: "Paracetamol 500mg",
@@ -115,6 +121,24 @@ const seedDemoUsers = async () => {
   }
 };
 
+export const seedAdminUsers = async () => {
+  const adminPassword = process.env.ADMIN_PASSWORD || "Admin@12345";
+  const adminUsers = parseAdminEmails();
+
+  for (const email of adminUsers) {
+    const existingUser = await User.findOne({ email });
+
+    if (!existingUser) {
+      await User.create({
+        name: "Admin User",
+        email,
+        password: adminPassword,
+        role: "admin"
+      });
+    }
+  }
+};
+
 export const seedDemoMedicines = async () => {
   const totalMedicines = await Medicine.countDocuments();
 
@@ -155,6 +179,7 @@ export const seedDemoMedicines = async () => {
 };
 
 const seedData = async () => {
+  await seedAdminUsers();
   await seedDemoUsers();
   await seedDemoMedicines();
 };
